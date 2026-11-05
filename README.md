@@ -66,18 +66,36 @@
 1. Fork 本仓库（或直接使用本仓库的 Actions）。
 2. 打开 **Actions → Build ImmortalWrt 24.10.6 (QModem stable, legacy UI) → Run workflow**。
 3. 保持默认版本 `v24.10.6`，点击运行。
-4. 首次全量编译在 4 核 GitHub Runner 上约需 **3~4.5 小时**（含工具链、内核、Docker、daed、QModem）。
+4. 首次全量编译在 4 核 GitHub Runner 上实测约 **2 小时**（含工具链、内核、Docker、daed、QModem；不同 Runner 负载会有浮动）。
 5. 构建成功后，在该次运行页面下载 artifact：
    `immortalwrt-v24.10.6-qmodem-legacy-efi`
 6. artifact 内含：
    - `immortalwrt-x86-64-generic-ext4-combined-efi.img.gz`
-   - `*.sha256sums`
+   - `sha256sums`
    - `*.manifest`
    - `config.buildinfo` / `version.buildinfo`
-   - `build.log`
+   - `build.log`（失败时另含 `logs/` 下的软件包编译日志）
 
 > Runner 默认磁盘较小，工作流第一步会清理 Android SDK、.NET、CodeQL、hostedtoolcache 等目录以腾出空间，这是正常操作。
 > 工作流设置了 350 分钟超时，低于 GitHub 单任务 6 小时上限。
+> 构建步骤启用了 `pipefail`，`make` 失败会直接让任务失败，不会出现"日志报错但任务显示成功"的假成功。
+
+### 3.1 最近一次成功构建
+
+| 项目 | 内容 |
+| --- | --- |
+| Actions Run | [42055124919](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/actions/runs/42055124919) |
+| 结果 | 成功（约 2 小时） |
+| 镜像 | `immortalwrt-x86-64-generic-ext4-combined-efi.img.gz`（168 MB） |
+| SHA-256 | `6711d8821d32c43e5f597a5bb2f5ae5f3757c4fca0b6f5e5e3b089544af6299e` |
+
+产物校验结果：
+
+- GPT 分区：32 MiB FAT16 `kernel` 分区 + 1024 MiB ext4 `rootfs` 分区，另含 BIOS boot 分区（EFI/BIOS 混合启动）
+- `kernel` 分区内有 `/boot/vmlinuz`（7.3 MB bzImage）、`/boot/grub/grub.cfg`、`/EFI/BOOT/BOOTX64.EFI`
+- rootfs 卷标 `rootfs`，大小恰好 1024 MiB
+- 包清单包含 `qmodem 3.3.0`、`luci-app-qmodem 3.3.0`、`luci-app-qmodem-sms 3.3.0`、`sms-forwarder 3.3.0`、`daed 1.24.0`、`luci-app-dockerman 0.5.26`，且不含 `luci-app-qmodem-next` / `sms-forwarder-next`
+- `gzip -t` 报 `trailing garbage ignored` 属正常现象：镜像尾部附加了 ucert 签名（官方镜像同样如此）
 
 ### 手动触发（命令行）
 
@@ -97,14 +115,14 @@ gh run watch
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential clang flex bison g++ gawk \
+sudo apt-get install -y build-essential clang llvm flex bison g++ gawk \
   gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
   python3-setuptools python3-pip rsync unzip zlib1g-dev file wget \
   dwarves libelf-dev bc ccache libtool automake autoconf pkg-config zstd cpio xxd
 ```
 
 > `dwarves` 提供 `pahole`，daed 需要内核 BTF 信息。
-> `clang` / `libelf-dev` 用于 eBPF 工具链。
+> `clang` / `libelf-dev` 用于 eBPF 工具链；`llvm` 必须一起安装，否则 daed 生成 BPF 时找不到 `llvm-strip` / `opt` / `llvm-dis` / `llc`。
 
 ### 4.2 获取源码与 feeds
 
@@ -242,7 +260,7 @@ Windows / macOS：使用 balenaEtcher、Rufus（DD 模式）等工具直接写�
 
 ## 7. 已知限制
 
-1. **GitHub Runner 资源有限**：4 核 / 16 GB 内存，首次构建约 3~4.5 小时；磁盘通过清理系统目录腾出空间。若超时或磁盘不足，可改用自建 Runner 或本地构建。
+1. **GitHub Runner 资源有限**：4 核 / 16 GB 内存，本次实测全量构建约 2 小时；磁盘通过清理系统目录腾出空间。若超时或磁盘不足，可改用自建 Runner 或本地构建。
 2. **未实机验证**：蜂窝模组的拨号、短信、锁频等行为与具体型号、USB 模式、运营商相关，构建成功不代表功能全部可用。
 3. **QModem 许可证**：QModem 采用带禁止商业使用条款的 MPL 2.0 衍生许可，使用与分发前请阅读其仓库 `LICENSE`。
 4. **CI 缓存**：ccache 首次为空，后续运行会明显加快；缓存上限 2 GB。
@@ -263,6 +281,9 @@ A：v3.3.0 stable 的短信栈由 `sms-tool_q` + `sms-forwarder` + qmodem 后端
 
 **Q：构建失败在下载阶段？**
 A：上游源码偶发 404/超时。工作流会先并行下载，失败后回退单线程详细日志；重跑一次通常可恢复。
+
+**Q：构建失败在 `daed` / BPF 生成阶段？**
+A：主机缺少完整 LLVM 工具链。只装 `clang` 不够，daed 生成 BPF 时需要 `llvm-strip`、`opt`、`llvm-dis`、`llc`，请安装 `llvm` 包；工作流已包含该依赖并在失败时上传 `openwrt/logs` 下的软件包编译日志。
 
 ---
 

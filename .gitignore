@@ -11,3 +11,4 @@ artifacts/
 *.ipk
 *.apk
 .DS_Store
+artifacts-ci/

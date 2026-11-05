@@ -105,6 +105,7 @@ jobs:
           mkdir -p artifacts
           cp openwrt/bin/targets/x86/64/*combined-efi.img.gz artifacts/ 2>/dev/null || true
           cp openwrt/bin/targets/x86/64/*.sha256sums artifacts/ 2>/dev/null || true
+          cp openwrt/bin/targets/x86/64/sha256sums artifacts/ 2>/dev/null || true
           cp openwrt/bin/targets/x86/64/*.manifest artifacts/ 2>/dev/null || true
           cp openwrt/bin/targets/x86/64/config.buildinfo artifacts/ 2>/dev/null || true
           cp openwrt/bin/targets/x86/64/version.buildinfo artifacts/ 2>/dev/null || true
