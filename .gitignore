@@ -1,0 +1,13 @@
+openwrt/
+bin/
+build_dir/
+dl/
+staging_dir/
+tmp/
+logs/
+.ccache/
+build.log
+artifacts/
+*.ipk
+*.apk
+.DS_Store
