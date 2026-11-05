@@ -1,5 +1,7 @@
 # Actions-ImmortalWrt-Qmodem
 
+[![Build](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/actions/workflows/build.yml/badge.svg)](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/actions/workflows/build.yml)
+
 基于 ImmortalWrt **v24.10.6** 的 x86_64 精简固件，使用 **QModem stable v3.3.0 + 旧版 Lua 界面**，通过 GitHub Actions 云端编译并输出 EFI 镜像。
 
 > ## AI 构建声明
@@ -112,7 +114,7 @@ git clone --depth 1 --branch v24.10.6 \
 cd openwrt
 
 # 使用本仓库锁定的 feeds
-git clone https://github.com/<your-name>/Actions-ImmortalWrt-Qmodem.git build-config
+git clone https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem.git build-config
 cp build-config/feeds.conf.default feeds.conf.default
 
 ./scripts/feeds update -a
