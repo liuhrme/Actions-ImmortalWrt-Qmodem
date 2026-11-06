@@ -14,7 +14,7 @@ on:
       - ".gitignore"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -115,6 +115,33 @@ jobs:
             cp -r openwrt/logs/. artifacts/logs/ || true
           fi
           ls -lh artifacts
+
+      - name: Publish GitHub Release
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd artifacts
+          [ -f sha256sums ] || sha256sum *.img.gz > sha256sums
+          TAG="${IWRT_VERSION}-qmodem-legacy-r${{ github.run_number }}"
+          cat > release-notes.md <<EOF
+          ## ImmortalWrt ${IWRT_VERSION} + QModem stable v3.3.0（旧版 Lua 界面）
+
+          - 构建记录：[run ${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - 提交：\`${{ github.sha }}\`
+          - 镜像：\`ext4-combined-efi\`（EFI/BIOS 混合启动），内核分区 32 MiB，根分区 1024 MiB
+          - 组件：QModem 3.3.0（\`luci-app-qmodem\` + \`luci-app-qmodem-sms\` + \`sms-forwarder\`）、daed 1.24.0、dockerman 0.5.26（Lua）、samba4、frpc、Argon 主题
+          - 校验：见 \`sha256sums\`
+
+          > 本固件配置、工作流与文档由 AI（Qoder）生成，未在所有硬件组合上实机验证。
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" immortalwrt-*.img.gz sha256sums *.manifest config.buildinfo version.buildinfo build.log --clobber
+          else
+            gh release create "$TAG" immortalwrt-*.img.gz sha256sums *.manifest config.buildinfo version.buildinfo build.log \
+              --title "ImmortalWrt ${IWRT_VERSION} + QModem 3.3.0 (legacy UI) - r${{ github.run_number }}" \
+              --notes-file release-notes.md --latest
+          fi
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
