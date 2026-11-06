@@ -67,14 +67,15 @@
 2. 打开 **Actions → Build ImmortalWrt 24.10.6 (QModem stable, legacy UI) → Run workflow**。
 3. 保持默认版本 `v24.10.6`，点击运行。
 4. 首次全量编译在 4 核 GitHub Runner 上实测约 **2 小时**（含工具链、内核、Docker、daed、QModem；不同 Runner 负载会有浮动）。
-5. 构建成功后，在该次运行页面下载 artifact：
-   `immortalwrt-v24.10.6-qmodem-legacy-efi`
-6. artifact 内含：
+5. 构建成功后会自动创建 GitHub Release（tag 形如 `v24.10.6-qmodem-legacy-r<run_number>`），并标记为 Latest；可直接从 [Releases](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/releases/latest) 下载固件。
+6. 该次运行页面的 artifact（`immortalwrt-v24.10.6-qmodem-legacy-efi`）同样保留 30 天，内含：
    - `immortalwrt-x86-64-generic-ext4-combined-efi.img.gz`
    - `sha256sums`
    - `*.manifest`
    - `config.buildinfo` / `version.buildinfo`
    - `build.log`（失败时另含 `logs/` 下的软件包编译日志）
+
+> Release 与 artifact 上传使用仓库自带的 `GITHUB_TOKEN`，工作流已声明 `contents: write` 权限，无需额外配置 Secret。
 
 > Runner 默认磁盘较小，工作流第一步会清理 Android SDK、.NET、CodeQL、hostedtoolcache 等目录以腾出空间，这是正常操作。
 > 工作流设置了 350 分钟超时，低于 GitHub 单任务 6 小时上限。
