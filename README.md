@@ -85,10 +85,11 @@
 
 | 项目 | 内容 |
 | --- | --- |
-| Actions Run | [42055124919](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/actions/runs/42055124919) |
-| 结果 | 成功（约 2 小时） |
+| Release | [v24.10.6-qmodem-legacy-r3](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/releases/tag/v24.10.6-qmodem-legacy-r3)（Latest） |
+| Actions Run | [42135909734](https://github.com/liuhrme/Actions-ImmortalWrt-Qmodem/actions/runs/42135909734) |
+| 结果 | 成功（约 2 小时），自动发布到 Releases |
 | 镜像 | `immortalwrt-x86-64-generic-ext4-combined-efi.img.gz`（168 MB） |
-| SHA-256 | `6711d8821d32c43e5f597a5bb2f5ae5f3757c4fca0b6f5e5e3b089544af6299e` |
+| SHA-256 | `3c8e8837dcf3c0bc7cee927c1ea7f4417148bbee00224f681f1b1bae496b4844` |
 
 产物校验结果：
 
